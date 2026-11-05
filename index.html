@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlueTrack - Sistem Operasional Laundry</title>
+    <!-- Tailwind CSS untuk Desain Modern dan Responsif -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        darkBlue: '#1E3A8A',
+                        lightBlue: '#EFF6FF',
+                        appBg: '#F8FAFC',
+                        slateText: '#1E293B'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-appBg text-slateText font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- GLOBAL NOTIFICATION TOAST -->
+    <div id="toast" class="fixed top-5 right-5 z-50 hidden transition-all duration-300 transform translate-y-[-20px] opacity-0 px-4 py-3 rounded-lg shadow-lg text-white font-medium text-sm flex items-center space-x-2">
+        <span id="toast-msg">Notifikasi</span>
+    </div>
+
+    <!-- APP CONTAINER -->
+    <div id="app" class="flex-1 flex flex-col">
+        <!-- Konten akan dimuat secara dinamis via JavaScript -->
+    </div>
+
+    <script>
+        // =====================================================================
+        // KONFIGURASI SUPABASE (SILAKAN GANTI DENGAN KREDENSIAL PROYEK ANDA)
+        // =====================================================================
+        const SUPABASE_URL = 'https://hfuqfjxxnnblpwgmmbrh.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_PTaiOZfSgPmyJC0YCUbojw_i5I7sNSd';
+
+        let supabaseClient = null;
+        if (SUPABASE_URL !== 'https://hfuqfjxxnnblpwgmmbrh.supabase.co' && SUPABASE_ANON_KEY !== 'sb_publishable_PTaiOZfSgPmyJC0YCUbojw_i5I7sNSd') {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        // State Global Aplikasi
+        let currentUser = null;
+        let activitiesList = [];
+
+        // Utility: Tampilkan Toast
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-msg');
+            msgEl.textContent = message;
+            toast.className = `fixed top-5 right-5 z-50 transition-all duration-300 px-4 py-3 rounded-lg shadow-lg text-white font-medium text-sm flex items-center space-x-2 ${type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-20px]', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+            toast.classList.remove('translate-y-[-20px]', 'opacity-0');
+        }
+
+        // Router Utama berdasarkan Hash / Query / Status Auth
+        async function handleRoute() {
+            const hash = window.location.hash;
+            const appEl = document.getElementById('app');
+
+            if (!supabaseClient) {
+                appEl.innerHTML = renderConfigError();
+                return;
+            }
+
+            // Cek rute publik detail rekapitulasi: #/r/UUID atau format query ?r=UUID
+            if (hash.startsWith('#/r/') || window.location.search.includes('r=')) {
+                let token = '';
+                if (hash.startsWith('#/r/')) {
+                    token = hash.replace('#/r/', '');
+                } else {
+                    const params = new URLSearchParams(window.location.search);
+                    token = params.get('r');
+                }
+                if (token) {
+                    await renderPublicDetail(token);
+                    return;
+                }
+            }
+
+            // Cek Sesi Autentikasi
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            currentUser = session ? session.user : null;
+
+            if (!currentUser) {
+                renderLoginView();
+            } else {
+                renderDashboardView();
+            }
+        }
+
+        // Tampilan Error Konfigurasi Belum Diisi
+        function renderConfigError() {
+            return `
+                <div class="flex-1 flex items-center justify-center p-4">
+                    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-blue-100 text-center">
+                        <div class="w-16 h-16 bg-blue-100 text-primary rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">⚠️</div>
+                        <h1 class="text-2xl font-bold text-darkBlue mb-2">Konfigurasi Belum Lengkap</h1>
+                        <p class="text-gray-600 text-sm mb-6">Silakan buka file <code class="bg-gray-100 px-1 py-0.5 rounded text-primary font-mono">index.html</code> dan masukkan <strong>SUPABASE_URL</strong> serta <strong>SUPABASE_ANON_KEY</strong> Anda pada baris konfigurasi JavaScript.</p>
+                        <div class="bg-blue-50 p-4 rounded-xl text-left text-xs text-blue-900 space-y-1">
+                            <p class="font-semibold">Langkah:</p>
+                            <p>1. Buka Supabase Dashboard > Project Settings > API</p>
+                            <p>2. Salin Project URL & Anon/Public Key</p>
+                            <p>3. Tempelkan ke variabel di dalam kode index.html</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // =====================================================================
+        // 1. HALAMAN LOGIN
+        // =====================================================================
+        function renderLoginView() {
+            const appEl = document.getElementById('app');
+            appEl.innerHTML = `
+                <div class="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-lightBlue via-appBg to-blue-100">
+                    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-blue-100">
+                        <div class="text-center mb-8">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-primary text-white rounded-2xl shadow-md text-2xl font-bold mb-3">BT</div>
+                            <h1 class="text-28 font-bold text-darkBlue">BlueTrack</h1>
+                            <p class="text-gray-500 text-sm mt-1">Sistem Operasional Laundry Pickup & Delivery</p>
+                        </div>
+                        <form id="login-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Email Administrator</label>
+                                <input type="email" id="email" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="admin@laundry.com">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Password</label>
+                                <input type="password" id="password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="••••••••">
+                            </div>
+                            <button type="submit" id="login-btn" class="w-full bg-primary hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition duration-200 shadow-md">
+                                Masuk ke Dashboard
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const btn = document.getElementById('login-btn');
+
+                btn.disabled = true;
+                btn.textContent = 'Memproses...';
+
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    showToast(error.message, 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Masuk ke Dashboard';
+                } else {
+                    showToast('Login berhasil!');
+                    currentUser = data.user;
+                    renderDashboardView();
+                }
+            });
+        }
+
+        // =====================================================================
+        // 2. DASHBOARD UTAMA & KONTROL AKTIVITAS
+        // =====================================================================
+        async function renderDashboardView() {
+            const appEl = document.getElementById('app');
+            const today = new Date().toISOString().split('T')[0];
+
+            appEl.innerHTML = `
+                <!-- NAVBAR -->
+                <header class="bg-darkBlue text-white shadow-md sticky top-0 z-40">
+                    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 bg-primary rounded-xl flex items-center justify-center font-bold text-white shadow">BT</div>
+                            <div>
+                                <h1 class="font-bold text-lg leading-tight">BlueTrack</h1>
+                                <p class="text-xs text-blue-200">Operasional Laundry</p>
+                            </div>
+                        </div>
+                        <button id="logout-btn" class="bg-blue-900 hover:bg-blue-800 text-blue-100 text-xs px-3 py-2 rounded-lg border border-blue-700 transition">
+                            Logout
+                        </button>
+                    </div>
+                </header>
+
+                <!-- MAIN CONTENT -->
+                <main class="max-w-4xl mx-auto w-full p-4 space-y-6 flex-1 mb-12">
+                    
+                    <!-- KARTU FORM INPUT -->
+                    <section class="bg-white p-6 rounded-2xl shadow-sm border border-blue-50">
+                        <h2 class="text-base font-bold text-darkBlue mb-4 flex items-center">
+                            <span class="w-2 h-2 bg-primary rounded-full mr-2"></span> Catat Aktivitas Baru
+                        </h2>
+                        <form id="activity-form" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tanggal Aktivitas</label>
+                                    <input type="date" id="activity-date" value="${today}" required class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Jenis Aktivitas</label>
+                                    <select id="activity-type" required class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary text-sm bg-white">
+                                        <option value="pickup">Pickup (Jemput)</option>
+                                        <option value="delivery">Delivery (Antar)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Nama Pelanggan / Keterangan</label>
+                                <input type="text" id="customer-name" placeholder="Contoh: Budi (Jl. Melati No. 5)" required class="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary text-sm">
+                            </div>
+                            <button type="submit" id="save-activity-btn" class="w-full bg-primary hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition duration-200 shadow-md text-sm">
+                                Simpan Aktivitas
+                            </button>
+                        </form>
+                    </section>
+
+                    <!-- KARTU FILTER & DAFTAR AKTIVITAS -->
+                    <section class="bg-white p-6 rounded-2xl shadow-sm border border-blue-50 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <h2 class="text-base font-bold text-darkBlue flex items-center">
+                                <span class="w-2 h-2 bg-primary rounded-full mr-2"></span> Daftar Aktivitas
+                            </h2>
+                            <div class="flex items-center space-x-2">
+                                <select id="filter-type" class="px-3 py-2 rounded-xl border border-gray-200 text-xs bg-white">
+                                    <option value="all">Semua Jenis</option>
+                                    <option value="pickup">Pickup Saja</option>
+                                    <option value="delivery">Delivery Saja</option>
+                                </select>
+                                <input type="date" id="filter-date" class="px-3 py-2 rounded-xl border border-gray-200 text-xs">
+                                <button id="reset-filter" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-xl text-xs font-medium">Reset</button>
+                            </div>
+                        </div>
+
+                        <div id="activities-container" class="overflow-x-auto">
+                            <div class="text-center py-8 text-gray-400 text-sm">Memuat data aktivitas...</div>
+                        </div>
+                    </section>
+
+                    <!-- KARTU FITUR REKAPITULASI -->
+                    <section class="bg-white p-6 rounded-2xl shadow-sm border border-blue-50 space-y-4">
+                        <h2 class="text-base font-bold text-darkBlue flex items-center">
+                            <span class="w-2 h-2 bg-primary rounded-full mr-2"></span> Buat Rekapitulasi & Bagikan Link
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tanggal Mulai</label>
+                                <input type="date" id="recap-start" value="${today}" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Tanggal Akhir</label>
+                                <input type="date" id="recap-end" value="${today}" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm">
+                            </div>
+                        </div>
+                        <button id="generate-recap-btn" class="w-full bg-darkBlue hover:bg-blue-900 text-white font-semibold py-3 rounded-xl transition duration-200 shadow-md text-sm">
+                            Generate Rekapitulasi & Buat Link Unik
+                        </button>
+
+                        <div id="recap-result-area" class="hidden mt-4 pt-4 border-t border-gray-100 space-y-3">
+                            <!-- Hasil Rekap & Copy Box -->
+                        </div>
+                    </section>
+
+                </main>
+            `;
+
+            // Event Listeners Dashboard
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                await supabaseClient.auth.signOut();
+                currentUser = null;
+                renderLoginView();
+                showToast('Berhasil logout');
+            });
+
+            document.getElementById('activity-form').addEventListener('submit', handleSaveActivity);
+            document.getElementById('filter-type').addEventListener('change', renderActivitiesList);
+            document.getElementById('filter-date').addEventListener('change', renderActivitiesList);
+            document.getElementById('reset-filter').addEventListener('click', () => {
+                document.getElementById('filter-type').value = 'all';
+                document.getElementById('filter-date').value = '';
+                renderActivitiesList();
+            });
+
+            document.getElementById('generate-recap-btn').addEventListener('click', handleGenerateRecap);
+
+            // Load Data Awal
+            await fetchActivities();
+        }
+
+        // Ambil Data Aktivitas dari Supabase
+        async function fetchActivities() {
+            const { data, error } = await supabaseClient
+                .from('activities')
+                .select('*')
+                .order('activity_date', { ascending: false })
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                showToast('Gagal memuat aktivitas: ' + error.message, 'error');
+                return;
+            }
+
+            activitiesList = data || [];
+            renderActivitiesList();
+        }
+
+        // Simpan Aktivitas Baru
+        async function handleSaveActivity(e) {
+            e.preventDefault();
+            const activity_date = document.getElementById('activity-date').value;
+            const activity_type = document.getElementById('activity-type').value;
+            const customer_name = document.getElementById('customer-name').value.trim();
+            const btn = document.getElementById('save-activity-btn');
+
+            btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
+
+            const { error } = await supabaseClient
+                .from('activities')
+                .insert([{ customer_name, activity_type, activity_date, created_by: currentUser.id }]);
+
+            btn.disabled = false;
+            btn.textContent = 'Simpan Aktivitas';
+
+            if (error) {
+                showToast('Gagal menyimpan: ' + error.message, 'error');
+            } else {
+                showToast('Aktivitas berhasil disimpan!');
+                document.getElementById('customer-name').value = '';
+                await fetchActivities();
+            }
+        }
+
+        // Render Tabel / Daftar Aktivitas dengan Filter
+        function renderActivitiesList() {
+            const container = document.getElementById('activities-container');
+            const filterType = document.getElementById('filter-type').value;
+            const filterDate = document.getElementById('filter-date').value;
+
+            let filtered = activitiesList.filter(item => {
+                let matchType = filterType === 'all' || item.activity_type === filterType;
+                let matchDate = !filterDate || item.activity_date === filterDate;
+                return matchType && matchDate;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">Tidak ada data aktivitas yang ditemukan.</div>`;
+                return;
+            }
+
+            let html = `
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-100 text-xs font-sem
