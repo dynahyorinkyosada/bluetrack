@@ -1,3 +1,13 @@
-# BlueTrack - Sistem Operasional Laundry Pickup & Delivery
+# BlueTrack — Panduan Singkat
 
-BlueTrack adalah aplikasi web modern berbasis web statis dan Supabase PostgreSQL untuk mencatat aktivitas operasional *Pickup* dan *Delivery* pelanggan laundry secara efisien, responsif di HP Android, serta dilengkapi fitur rekapitulasi dan berbagi link publik yang aman.
+## Setup
+1. Buat proyek di https://supabase.com/dashboard
+2. SQL Editor → paste `supabase_setup.sql` → **Run**
+3. Authentication → Users → **Add user** (centang Auto Confirm)
+4. Project Settings → API → catat **Project URL** & **anon key**
+
+## Konfigurasi
+Edit `index.html`, ganti dua baris:
+```js
+const SUPABASE_URL='https://xxxxx.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGci...';
