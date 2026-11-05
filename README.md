@@ -10,4 +10,4 @@
 Edit `index.html`, ganti dua baris:
 ```js
 const SUPABASE_URL='https://dggsarhrtmthlxyuwptu.supabase.co';
-const SUPABASE_ANON_KEY='sb_publishable_vQOzRxyK6kbaC8ZnJvjy5A_5sEswodQ';
+const SUPABASE_ANON_KEY='vQOzRxyK6kbaC8ZnJvjy5A_5sEswodQ';
