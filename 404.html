@@ -1,0 +1,10 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8"/><title>Redirect...</title>
+<script>
+(function(){
+  var p=location.pathname,m=p.match(/\/r\/([0-9a-fA-F-]{36})\/?$/);
+  if(m){var b=p.substring(0,p.indexOf('/r/'));location.replace(b+'/?r='+m[1]);}
+  else{location.replace('./');}
+})();
+</script></head>
+<body><p style="font-family:sans-serif;text-align:center;padding:40px">Mengalihkan ke <a href="./">BlueTrack</a>...</p></body></html>
