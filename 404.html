@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>BlueTrack - Memuat...</title>
+    <script>
+        // Mekanisme Fallback Routing GitHub Pages untuk URL /r/TOKEN
+        const path = window.location.pathname;
+        const search = window.location.search;
+        
+        if (path.includes('/r/')) {
+            const parts = path.split('/r/');
+            if (parts.length > 1) {
+                const token = parts[1].split('/')[0];
+                window.location.replace('./#/r/' + token + search);
+            } else {
+                window.location.replace('./');
+            }
+        } else {
+            window.location.replace('./');
+        }
+    </script>
+</head>
+<body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+    <p>Mengarahkan ke BlueTrack...</p>
+</body>
+</html>
