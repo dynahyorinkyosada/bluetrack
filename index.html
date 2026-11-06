@@ -2,107 +2,211 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="theme-color" content="#2563EB"/>
 <title>BlueTrack</title>
 <style>
-body{font-family:sans-serif;background:#F8FAFC;margin:0;padding:20px;color:#1E293B}
-.card{background:#fff;padding:24px;border-radius:14px;max-width:400px;margin:0 auto;box-shadow:0 4px 12px rgba(0,0,0,.08)}
-h1{color:#2563EB;font-size:22px;text-align:center;margin:0 0 4px}
-.sub{text-align:center;color:#64748B;font-size:13px;margin-bottom:20px}
-input,button{width:100%;padding:12px;margin:8px 0;border:1.5px solid #E2E8F0;border-radius:10px;font-size:15px;box-sizing:border-box}
-input:focus{outline:none;border-color:#2563EB}
-button{background:#2563EB;color:#fff;font-weight:600;border:none;cursor:pointer;min-height:46px}
-button:disabled{opacity:.5}
-#err{background:#FEF2F2;color:#B91C1C;padding:10px;border-radius:8px;font-size:13px;margin-bottom:10px;display:none}
-#err.show{display:block}
-#dbg{background:#000;color:#0f0;font-family:monospace;font-size:11px;padding:8px;border-radius:6px;margin-top:12px;white-space:pre-wrap;min-height:20px;max-height:200px;overflow:auto}
-#main{display:none}
+:root{--p:#2563EB;--pd:#1E3A8A;--pl:#EFF6FF;--bg:#F8FAFC;--tx:#1E293B;--mu:#64748B;--bd:#E2E8F0;--ok:#10B981;--er:#EF4444;--r:14px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--tx);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font-family:inherit;font-size:15px}
+button{cursor:pointer;border:none;background:none}
+#auth{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#1E3A8A,#2563EB)}
+.auth-card{background:#fff;border-radius:20px;padding:32px 28px;width:100%;max-width:400px;box-shadow:0 10px 25px rgba(37,99,235,.2)}
+.logo{width:64px;height:64px;background:var(--p);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:#fff;font-size:32px;font-weight:800}
+.auth-card h1{text-align:center;font-size:24px;font-weight:800;margin-bottom:4px}
+.auth-card .sub{text-align:center;color:var(--mu);font-size:14px;margin-bottom:28px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.field input,.field select{width:100%;padding:13px 14px;border:1.5px solid var(--bd);border-radius:11px;background:#fff;color:var(--tx);outline:none;transition:border-color .15s,box-shadow .15s}
+.field input:focus,.field select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border-radius:11px;font-weight:600;min-height:48px;width:100%;transition:transform .1s,opacity .15s}
+.btn:active{transform:scale(.98)}.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover:not(:disabled){background:#1D4ED8}
+.btn-s{background:var(--pl);color:var(--p)}.btn-d{background:var(--er);color:#fff}
+.btn-o{background:#fff;border:1.5px solid var(--bd);color:var(--tx)}.btn-sm{padding:9px 14px;font-size:13px;min-height:40px;width:auto}
+.err{background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA;padding:11px 14px;border-radius:10px;font-size:13px;margin-bottom:16px;display:none}.err.show{display:block}
+#app{display:none;min-height:100dvh;padding-bottom:90px}#app.on{display:block}
+.hdr{background:var(--p);color:#fff;padding:18px 20px;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(37,99,235,.2)}
+.hdr-in{max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px}
+.badge{width:38px;height:38px;background:rgba(255,255,255,.2);border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
+.bname{font-weight:800;font-size:18px;line-height:1.1}.btag{font-size:11px;opacity:.85}
+.logout{background:rgba(255,255,255,.15);color:#fff;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600}
+.wrap{max-width:720px;margin:0 auto;padding:20px}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--bd);display:flex;justify-content:space-around;padding:6px 8px;padding-bottom:max(6px,env(safe-area-inset-bottom));z-index:60;box-shadow:0 -2px 12px rgba(15,23,42,.04)}
+.nav-b{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;color:var(--mu);font-size:11px;font-weight:600;max-width:100px;transition:color .15s,background .15s}
+.nav-b svg{width:22px;height:22px}.nav-b.on{color:var(--p);background:var(--pl)}
+.card{background:#fff;border-radius:var(--r);box-shadow:0 1px 3px rgba(15,23,42,.06);padding:18px;margin-bottom:16px;border:1px solid var(--bd)}
+.ctitle{font-size:16px;font-weight:700;margin-bottom:14px}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.tbtn{padding:16px 12px;border-radius:12px;border:2px solid var(--bd);background:#fff;color:var(--mu);font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s}
+.tbtn svg{width:24px;height:24px}.tbtn.on{border-color:var(--p);background:var(--pl);color:var(--p)}
+.item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--bd)}.item:last-child{border-bottom:none}
+.ic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ic.pickup{background:#DBEAFE;color:#1D4ED8}.ic.delivery{background:#DCFCE7;color:#15803D}
+.ib{flex:1;min-width:0}.iname{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imeta{font-size:12px;color:var(--mu)}
+.del{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--er);background:#FEF2F2;flex-shrink:0}
+.empty{text-align:center;padding:32px 16px;color:var(--mu);font-size:14px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.st{background:var(--pl);border-radius:12px;padding:16px;text-align:center}
+.st.tot{grid-column:1/-1;background:var(--p);color:#fff}
+.stl{font-size:12px;font-weight:600;opacity:.8;margin-bottom:6px}.stv{font-size:26px;font-weight:800}
+.rtxt{background:#F1F5F9;border-radius:11px;padding:14px;font-family:ui-monospace,monospace;font-size:12.5px;white-space:pre-wrap;word-break:break-word;max-height:320px;overflow-y:auto;margin-bottom:12px}
+.racts{display:flex;gap:10px}.racts .btn{flex:1}
+.linkbox{background:var(--pl);border:1.5px dashed var(--p);border-radius:11px;padding:12px;margin-bottom:12px;font-size:12px;word-break:break-all;color:var(--pd)}
+#toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:9999;width:calc(100% - 32px);max-width:400px;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.tst{padding:13px 16px;border-radius:11px;color:#fff;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(15,23,42,.18);animation:tin .25s ease}
+.tst.success{background:var(--ok)}.tst.error{background:var(--er)}.tst.info{background:var(--p)}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.sp{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.sp.dk{border-color:rgba(37,99,235,.2);border-top-color:var(--p)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load{text-align:center;padding:40px 16px;color:var(--mu)}.load .sp{margin:0 auto 12px;width:28px;height:28px}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:200}
+.modal.on{display:flex}.mbox{background:#fff;border-radius:18px;padding:24px;max-width:380px;width:100%;animation:min .2s ease}
+@keyframes min{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.mtitle{font-size:17px;font-weight:700;margin-bottom:8px}.mtext{color:var(--mu);font-size:14px;margin-bottom:20px}
+.macts{display:flex;gap:10px}.macts .btn{flex:1}
+#pub{min-height:100dvh;padding:24px 16px 40px;background:var(--bg)}
+.pwrap{max-width:640px;margin:0 auto}
+.phdr{text-align:center;margin-bottom:24px;padding:24px 20px;background:linear-gradient(135deg,var(--pd),var(--p));border-radius:18px;color:#fff}
+.phdr h1{font-size:20px;margin-bottom:6px}.phdr p{font-size:13px;opacity:.85}
+.nlist{list-style:none;counter-reset:i}
+.nlist li{counter-increment:i;padding:10px 14px;background:#fff;border-radius:10px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:14px;border:1px solid var(--bd)}
+.nlist li::before{content:counter(i);width:24px;height:24px;background:var(--pl);color:var(--p);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.nlist li .dt{margin-left:auto;font-size:11px;color:var(--mu)}
+.hide{display:none!important}.mu{color:var(--mu)}.tc{text-align:center}.mt8{margin-top:8px}.mt16{margin-top:16px}.mb8{margin-bottom:8px}
 </style>
 </head>
 <body>
 
-<div id="login-screen">
-  <div class="card">
+<div id="auth">
+  <div class="auth-card">
+    <div class="logo">B</div>
     <h1>BlueTrack</h1>
-    <p class="sub">Login Administrator</p>
-    <div id="err"></div>
+    <p class="sub">Sistem Pencatatan Pickup & Delivery</p>
+    <div class="err" id="aerr"></div>
     <form id="lf">
-      <input type="email" id="le" placeholder="Email" required autocomplete="email"/>
-      <input type="password" id="lp" placeholder="Password" required autocomplete="current-password"/>
-      <button type="submit" id="lbtn">Masuk</button>
+      <div class="field"><label for="le">Email Administrator</label><input type="email" id="le" required placeholder="admin@bluetrack.id" autocomplete="email"/></div>
+      <div class="field"><label for="lp">Password</label><input type="password" id="lp" required placeholder="••••••••" autocomplete="current-password"/></div>
+      <button type="submit" class="btn btn-p" id="lbtn"><span id="ltxt">Masuk</span><span class="sp hide" id="lsp"></span></button>
     </form>
-    <div id="dbg">Menunggu...</div>
+    <p class="tc mu mt16" style="font-size:12px">Hanya administrator terdaftar yang dapat mengakses.</p>
   </div>
 </div>
 
-<div id="main">
-  <div class="card">
-    <h1>Selamat datang</h1>
-    <p class="sub" id="who"></p>
-    <button onclick="logout()" style="background:#EF4444">Keluar</button>
+<div id="app">
+  <header class="hdr"><div class="hdr-in">
+    <div class="brand"><div class="badge">B</div><div><div class="bname">BlueTrack</div><div class="btag">Pickup & Delivery</div></div></div>
+    <button class="logout" id="lout">Keluar</button>
+  </div></header>
+  <div class="wrap">
+    <section id="v-in">
+      <div class="card">
+        <div class="ctitle">Catat Aktivitas Baru</div>
+        <div class="tgrid">
+          <button class="tbtn on" id="tp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>PICKUP</button>
+          <button class="tbtn" id="td"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 18H3c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v11"/><path d="M14 9h4l4 4v4"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>DELIVERY</button>
+        </div>
+        <form id="af">
+          <div class="field"><label for="ad">Tanggal Aktivitas</label><input type="date" id="ad" required/></div>
+          <div class="field"><label for="an">Nama Pelanggan</label><input type="text" id="an" required maxlength="100" placeholder="Contoh: Budi" autocomplete="off"/></div>
+          <button type="submit" class="btn btn-p" id="sbtn"><span id="stxt">Simpan Aktivitas</span><span class="sp hide" id="ssp"></span></button>
+        </form>
+      </div>
+    </section>
+    <section id="v-list" class="hide">
+      <div class="card">
+        <div class="ctitle">Riwayat Aktivitas</div>
+        <div class="frow">
+          <div class="field" style="margin:0"><label for="fd">Tanggal</label><input type="date" id="fd"/></div>
+          <div class="field" style="margin:0"><label>&nbsp;</label><select id="ft"><option value="">Semua Tipe</option><option value="pickup">Pickup</option><option value="delivery">Delivery</option></select></div>
+        </div>
+        <button class="btn btn-o btn-sm mb8" id="rfil" style="width:100%">Reset Filter</button>
+        <div id="alist"><div class="load"><div class="sp dk"></div>Memuat...</div></div>
+      </div>
+    </section>
+    <section id="v-recap" class="hide">
+      <div class="card">
+        <div class="ctitle">Rekapitulasi</div>
+        <div class="field"><label for="rs">Tanggal Mulai</label><input type="date" id="rs"/></div>
+        <div class="field"><label for="re">Tanggal Akhir</label><input type="date" id="re"/></div>
+        <button class="btn btn-p" id="gbtn"><span id="gtxt">Buat Rekapitulasi</span><span class="sp hide" id="gsp"></span></button>
+      </div>
+      <div id="rres" class="hide">
+        <div class="card">
+          <div class="ctitle">Hasil Rekapitulasi</div>
+          <div id="rstats"></div>
+          <div class="linkbox" id="rlink"></div>
+          <div class="rtxt" id="rtxt"></div>
+          <div class="racts"><button class="btn btn-p" id="cbtn">Salin Teks</button><button class="btn btn-s" id="obtn">Buka Link</button></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <nav class="nav">
+    <button class="nav-b on" data-v="in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Catat</span></button>
+    <button class="nav-b" data-v="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Riwayat</span></button>
+    <button class="nav-b" data-v="recap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Rekap</span></button>
+  </nav>
+</div>
+
+<div id="pub" class="hide">
+  <div class="pwrap">
+    <div class="phdr"><h1>Rekapitulasi BlueTrack</h1><p id="pper">Memuat...</p></div>
+    <div id="pcont"><div class="load"><div class="sp dk"></div>Memuat...</div></div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.0"></script>
+<div class="modal" id="cfm">
+  <div class="mbox">
+    <div class="mtitle" id="ctitle">Konfirmasi</div>
+    <div class="mtext" id="ctext">Yakin?</div>
+    <div class="macts"><button class="btn btn-o" id="cno">Batal</button><button class="btn btn-d" id="cyes">Hapus</button></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = 'https://dggsarhrtmthlxyuwptu.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZ3NhcmhydG10aGx4eXV3cHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4ODA5NzIsImV4cCI6MjEwOTQ1Njk3Mn0.eYmsnumUKXvR38x4AFM0xdxi5hv9pfMtyDZinliYJSc';
-
-const $ = id => document.getElementById(id);
-const dbg = $('dbg');
-function log(m) { dbg.textContent += '\n' + m; }
-
-log('Script mulai');
-
-let sb;
-try {
-  log('Init client...');
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  log('Client OK');
-} catch (e) {
-  log('GAGAL createClient: ' + e.message);
-}
-
-$('lf').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  log('--- Submit ---');
-  $('err').classList.remove('show');
-  const email = $('le').value.trim();
-  const password = $('lp').value;
-  log('Email: ' + email);
-  log('Password len: ' + password.length);
-  
-  $('lbtn').disabled = true;
-  $('lbtn').textContent = 'Memproses...';
-  log('Memanggil Supabase...');
-  
-  try {
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    log('Respons diterima');
-    if (error) {
-      log('ERROR: ' + error.message);
-      throw error;
-    }
-    log('SUKSES: ' + data.user.email);
-    $('who').textContent = data.user.email;
-    $('login-screen').style.display = 'none';
-    $('main').style.display = 'block';
-  } catch (err) {
-    log('CATCH: ' + err.message);
-    $('err').textContent = err.message || 'Login gagal';
-    $('err').classList.add('show');
-  } finally {
-    $('lbtn').disabled = false;
-    $('lbtn').textContent = 'Masuk';
-  }
-});
-
-async function logout() {
-  await sb.auth.signOut();
-  $('login-screen').style.display = 'block';
-  $('main').style.display = 'none';
-  log('Logout');
-}
-</script>
-</body>
-</html>
+const SUPABASE_URL='https://dggsarhrtmthlxyuwptu.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZ3NhcmhydG10aGx4eXV3cHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4ODA5NzIsImV4cCI6MjEwOTQ1Njk3Mn0.eYmsnumUKXvR38x4AFM0xdxi5hv9pfMtyDZinliYJSc';
+const{createClient}=supabase;
+const sb=createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+const S={user:null,type:'pickup',view:'in',recap:null,cfRes:null};
+const $=id=>document.getElementById(id);
+const esc=s=>s==null?'':String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m,t='success'){const c=$('toast'),d=document.createElement('div');d.className='tst '+t;d.textContent=m;c.appendChild(d);setTimeout(()=>{d.style.opacity='0';d.style.transition='opacity .3s';setTimeout(()=>d.remove(),300)},2800)}
+function confirmBox(title,text){return new Promise(r=>{$('ctitle').textContent=title;$('ctext').textContent=text;$('cfm').classList.add('on');S.cfRes=r})}
+$('cno').onclick=()=>{$('cfm').classList.remove('on');if(S.cfRes){S.cfRes(false);S.cfRes=null}};
+$('cyes').onclick=()=>{$('cfm').classList.remove('on');if(S.cfRes){S.cfRes(true);S.cfRes=null}};
+function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function fdID(iso){if(!iso)return '-';const[y,m,d]=iso.split('-');const b=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];return `${+d} ${b[+m-1]} ${y}`}
+function fdS(iso){if(!iso)return '-';const[y,m,d]=iso.split('-');const b=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];return `${+d} ${b[+m-1]} ${y}`}
+function showAuth(){$('auth').style.display='flex';$('app').classList.remove('on');$('pub').classList.add('hide')}
+function showApp(){$('auth').style.display='none';$('app').classList.add('on');$('pub').classList.add('hide')}
+function switchView(v){S.view=v;['in','list','recap'].forEach(x=>$(`v-${x}`).classList.toggle('hide',x!==v));document.querySelectorAll('.nav-b').forEach(n=>n.classList.toggle('on',n.dataset.v===v));if(v==='list')loadList()}
+async function initAuth(){const{data:{session}}=await sb.auth.getSession();if(session?.user){S.user=session.user;showApp();defaults()}else showAuth();
+sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s){S.user=null;showAuth()}else if(s?.user){S.user=s.user;showApp()}})}
+function defaults(){const t=today();$('ad').value=t;$('rs').value=t;$('re').value=t;switchView('in');setType('pickup')}
+function setType(t){S.type=t;$('tp').classList.toggle('on',t==='pickup');$('td').classList.toggle('on',t==='delivery')}
+$('tp').onclick=()=>setType('pickup');$('td').onclick=()=>setType('delivery');
+$('lf').addEventListener('submit',async e=>{e.preventDefault();const email=$('le').value.trim(),password=$('lp').value,eb=$('aerr');eb.classList.remove('show');$('lbtn').disabled=true;$('lsp').classList.remove('hide');$('ltxt').textContent='Memproses...';
+try{const{data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;S.user=data.user;$('lf').reset();showApp();defaults();toast('Berhasil masuk')}catch(err){eb.textContent=err.message||'Login gagal';eb.classList.add('show')}finally{$('lbtn').disabled=false;$('lsp').classList.add('hide');$('ltxt').textContent='Masuk'}});
+$('lout').onclick=async()=>{const ok=await confirmBox('Keluar','Yakin ingin keluar?');if(!ok)return;await sb.auth.signOut();S.user=null;showAuth();toast('Berhasil keluar','info')};
+$('af').addEventListener('submit',async e=>{e.preventDefault();const date=$('ad').value,name=$('an').value.trim();if(!date||!name)return toast('Lengkapi data','error');if(!S.user)return toast('Sesi berakhir','error');
+$('sbtn').disabled=true;$('ssp').classList.remove('hide');$('stxt').textContent='Menyimpan...';
+try{const{error}=await sb.from('activities').insert({customer_name:name,activity_type:S.type,activity_date:date,created_by:S.user.id});if(error)throw error;$('an').value='';$('an').focus();toast(`${S.type==='pickup'?'Pickup':'Delivery'} tersimpan`)}catch(err){toast('Gagal: '+err.message,'error')}finally{$('sbtn').disabled=false;$('ssp').classList.add('hide');$('stxt').textContent='Simpan Aktivitas'}});
+async function loadList(){const L=$('alist');L.innerHTML='<div class="load"><div class="sp dk"></div>Memuat...</div>';
+const fD=$('fd').value,fT=$('ft').value;
+try{let q=sb.from('activities').select('id,customer_name,activity_type,activity_date').order('activity_date',{ascending:false}).order('created_at',{ascending:false});if(fD)q=q.eq('activity_date',fD);if(fT)q=q.eq('activity_type',fT);
+const{data,error}=await q;if(error)throw error;
+if(!data?.length){L.innerHTML='<div class="empty">Belum ada aktivitas</div>';return}
+L.innerHTML=data.map(a=>`<div class="item"><div class="ic ${a.activity_type}">${a.activity_type==='pickup'?'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>':'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 18H3c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v11"/><path d="M14 9h4l4 4v4"/></svg>'}</div><div class="ib"><div class="iname">${esc(a.customer_name)}</div><div class="imeta">${fdS(a.activity_date)} · ${a.activity_type==='pickup'?'Pickup':'Delivery'}</div></div><button class="del" data-d="${a.id}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>`).join('');
+L.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>delAct(b.dataset.d));
+}catch(err){L.innerHTML=`<div class="empty">Gagal: ${esc(err.message)}</div>`}}
+async function delAct(id){const ok=await confirmBox('Hapus Aktivitas','Data akan dihapus permanen. Lanjutkan?');if(!ok)return;
+try{cons
