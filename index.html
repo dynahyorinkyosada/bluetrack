@@ -170,7 +170,7 @@ button{cursor:pointer;border:none;background:none}
 </div>
 <div id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.0"></script>
 <script>
 const SUPABASE_URL='https://dggsarhrtmthlxyuwptu.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZ3NhcmhydG10aGx4eXV3cHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4ODA5NzIsImV4cCI6MjEwOTQ1Njk3Mn0.eYmsnumUKXvR38x4AFM0xdxi5hv9pfMtyDZinliYJSc';
@@ -209,4 +209,39 @@ L.innerHTML=data.map(a=>`<div class="item"><div class="ic ${a.activity_type}">${
 L.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>delAct(b.dataset.d));
 }catch(err){L.innerHTML=`<div class="empty">Gagal: ${esc(err.message)}</div>`}}
 async function delAct(id){const ok=await confirmBox('Hapus Aktivitas','Data akan dihapus permanen. Lanjutkan?');if(!ok)return;
-try{cons
+try{const{error}=await sb.from('activities').delete().eq('id',id);if(error)throw error;toast('Dihapus','info');loadList()}catch(err){toast('Gagal: '+err.message,'error')}}
+$('fd').onchange=loadList;$('ft').onchange=loadList;
+$('rfil').onclick=()=>{$('fd').value='';$('ft').value='';loadList()};
+$('gbtn').onclick=async()=>{const s=$('rs').value,e=$('re').value;if(!s||!e)return toast('Pilih tanggal','error');if(s>e)return toast('Tanggal mulai > akhir','error');if(!S.user)return toast('Sesi berakhir','error');
+$('gbtn').disabled=true;$('gsp').classList.remove('hide');$('gtxt').textContent='Menghitung...';$('rres').classList.add('hide');
+try{const{data:acts,error}=await sb.from('activities').select('customer_name,activity_type,activity_date').gte('activity_date',s).lte('activity_date',e).order('activity_date');
+if(error)throw error;
+const pu=acts.filter(a=>a.activity_type==='pickup'),de=acts.filter(a=>a.activity_type==='delivery');
+const{data:rec,error:e2}=await sb.from('recaps').insert({share_token:crypto.randomUUID(),start_date:s,end_date:e,pickup_count:pu.length,delivery_count:de.length,pickup_names:pu.map(p=>({name:p.customer_name,date:p.activity_date})),delivery_names:de.map(d=>({name:d.customer_name,date:d.activity_date})),created_by:S.user.id}).select().single();
+if(e2)throw e2;
+const url=shareUrl(rec.share_token);
+S.recap={s,e,pu:pu.length,de:de.length,total:acts.length,url};
+renderRecap(S.recap);toast('Rekap dibuat')}catch(err){toast('Gagal: '+err.message,'error')}finally{$('gbtn').disabled=false;$('gsp').classList.add('hide');$('gtxt').textContent='Buat Rekapitulasi'}};
+function renderRecap(d){$('rstats').innerHTML=`<div class="stats"><div class="st"><div class="stl">Total Pickup</div><div class="stv">${d.pu}</div></div><div class="st"><div class="stl">Total Delivery</div><div class="stv">${d.de}</div></div><div class="st tot"><div class="stl">Total Aktivitas</div><div class="stv">${d.total}</div></div></div>`;
+$('rlink').innerHTML=`<strong>Link publik:</strong><br><a href="${d.url}" target="_blank" rel="noopener" style="color:var(--pd)">${d.url}</a>`;
+$('rtxt').textContent=recapText(d);$('rres').classList.remove('hide')}
+function recapText(d){return`REKAPITULASI PICKUP & DELIVERY\nPeriode: ${fdID(d.s)} - ${fdID(d.e)}\n\nPICKUP\nTotal: ${d.pu} pelanggan\n\nDELIVERY\nTotal: ${d.de} pelanggan\n\nTOTAL AKTIVITAS: ${d.total}\n\nDetail lengkap:\n${d.url}`}
+function shareUrl(t){const base=location.origin+location.pathname.replace(/\/[^/]*$/,'/');return`${base.endsWith('/')?base:base+'/'}?r=${t}`}
+$('cbtn').onclick=async()=>{if(!S.recap)return;const ok=await copyText(recapText(S.recap));toast(ok?'Teks disalin':'Gagal menyalin',ok?'success':'error')};
+async function copyText(t){try{if(navigator.clipboard&&isSecureContext){await navigator.clipboard.writeText(t);return true}}catch(e){}
+try{const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();return ok}catch(e){return false}}
+$('obtn').onclick=()=>{if(S.recap)window.open(S.recap.url,'_blank')};
+document.querySelectorAll('.nav-b').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
+async function tryPublic(){const tk=new URLSearchParams(location.search).get('r');if(!tk)return false;
+if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tk)){pubErr('Token tidak valid');return true}
+$('auth').style.display='none';$('app').classList.remove('on');$('pub').classList.remove('hide');$('pper').textContent='Memuat...';$('pcont').innerHTML='<div class="load"><div class="sp dk"></div>Memuat...</div>';
+try{const{data,error}=await sb.rpc('get_public_recap',{p_token:tk});if(error)throw error;if(!data?.length){pubErr('Rekap tidak ditemukan');return true}renderPub(data[0])}catch(err){pubErr('Gagal: '+err.message)}return true}
+function pubErr(m){$('pper').textContent='';$('pcont').innerHTML=`<div class="card"><div class="empty">${esc(m)}</div></div>`}
+function renderPub(d){$('pper').textContent=`Periode: ${fdID(d.start_date)} - ${fdID(d.end_date)}`;
+const pu=Array.isArray(d.pickup_names)?d.pickup_names:[],de=Array.isArray(d.delivery_names)?d.delivery_names:[];
+const rl=a=>a.length===0?'<div class="empty">Tidak ada data</div>':`<ul class="nlist">${a.map(p=>`<li><span>${esc(p.name||'-')}</span><span class="dt">${fdS(p.date)}</span></li>`).join('')}</ul>`;
+$('pcont').innerHTML=`<div class="card"><div class="stats"><div class="st"><div class="stl">Total Pickup</div><div class="stv">${d.pickup_count}</div></div><div class="st"><div class="stl">Total Delivery</div><div class="stv">${d.delivery_count}</div></div><div class="st tot"><div class="stl">Total Aktivitas</div><div class="stv">${d.pickup_count+d.delivery_count}</div></div></div></div><div class="card"><div class="ctitle">Daftar Pickup (${d.pickup_count})</div>${rl(pu)}</div><div class="card"><div class="ctitle">Daftar Delivery (${d.delivery_count})</div>${rl(de)}</div><p class="tc mu" style="font-size:12px;margin-top:20px">Dibuat dengan BlueTrack · Snapshot</p>`}
+(async()=>{if(await tryPublic())return;await initAuth()})();
+</script>
+</body>
+</html>
