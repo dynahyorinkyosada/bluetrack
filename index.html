@@ -186,6 +186,18 @@ $('cyes').onclick=()=>{$('cfm').classList.remove('on');if(S.cfRes){S.cfRes(true)
 function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fdID(iso){if(!iso)return '-';const[y,m,d]=iso.split('-');const b=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];return `${+d} ${b[+m-1]} ${y}`}
 function fdS(iso){if(!iso)return '-';const[y,m,d]=iso.split('-');const b=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];return `${+d} ${b[+m-1]} ${y}`}
+function groupByDate(acts) {
+  const map = new Map();
+  for (const a of acts) {
+    if (!map.has(a.activity_date)) {
+      map.set(a.activity_date, { date: a.activity_date, pickup: 0, delivery: 0 });
+    }
+    const g = map.get(a.activity_date);
+    if (a.activity_type === 'pickup') g.pickup++;
+    else if (a.activity_type === 'delivery') g.delivery++;
+  }
+  return [...map.values()].sort((x, y) => x.date.localeCompare(y.date));
+}
 function showAuth(){$('auth').style.display='flex';$('app').classList.remove('on');$('pub').classList.add('hide')}
 function showApp(){$('auth').style.display='none';$('app').classList.add('on');$('pub').classList.add('hide')}
 function switchView(v){S.view=v;['in','list','recap'].forEach(x=>$(`v-${x}`).classList.toggle('hide',x!==v));document.querySelectorAll('.nav-b').forEach(n=>n.classList.toggle('on',n.dataset.v===v));if(v==='list')loadList()}
@@ -220,12 +232,33 @@ const pu=acts.filter(a=>a.activity_type==='pickup'),de=acts.filter(a=>a.activity
 const{data:rec,error:e2}=await sb.from('recaps').insert({share_token:crypto.randomUUID(),start_date:s,end_date:e,pickup_count:pu.length,delivery_count:de.length,pickup_names:pu.map(p=>({name:p.customer_name,date:p.activity_date})),delivery_names:de.map(d=>({name:d.customer_name,date:d.activity_date})),created_by:S.user.id}).select().single();
 if(e2)throw e2;
 const url=shareUrl(rec.share_token);
-S.recap={s,e,pu:pu.length,de:de.length,total:acts.length,url};
+S.recap={s,e,pu:pu.length,de:de.length,total:acts.length,url,acts};
 renderRecap(S.recap);toast('Rekap dibuat')}catch(err){toast('Gagal: '+err.message,'error')}finally{$('gbtn').disabled=false;$('gsp').classList.add('hide');$('gtxt').textContent='Buat Rekapitulasi'}};
 function renderRecap(d){$('rstats').innerHTML=`<div class="stats"><div class="st"><div class="stl">Total Pickup</div><div class="stv">${d.pu}</div></div><div class="st"><div class="stl">Total Delivery</div><div class="stv">${d.de}</div></div><div class="st tot"><div class="stl">Total Aktivitas</div><div class="stv">${d.total}</div></div></div>`;
 $('rlink').innerHTML=`<strong>Link publik:</strong><br><a href="${d.url}" target="_blank" rel="noopener" style="color:var(--pd)">${d.url}</a>`;
 $('rtxt').textContent=recapText(d);$('rres').classList.remove('hide')}
-function recapText(d){return`REKAPITULASI PICKUP & DELIVERY\nPeriode: ${fdID(d.s)} - ${fdID(d.e)}\n\nPICKUP\nTotal: ${d.pu} pelanggan\n\nDELIVERY\nTotal: ${d.de} pelanggan\n\nTOTAL AKTIVITAS: ${d.total}\n\nDetail lengkap:\n${d.url}`}
+function recapText(d){
+  const perDate = groupByDate(d.acts || []);
+  const detailPerTanggal = perDate.length
+    ? perDate.map(g =>
+        `- ${fdID(g.date)}  Pickup: ${g.pickup}  Delivery: ${g.delivery}`
+      ).join('\n')
+    : '- (tidak ada data)';
+
+  return `REKAPITULASI PICKUP & DELIVERY
+Periode: ${fdID(d.s)} - ${fdID(d.e)}
+
+RINGKASAN
+Total Pickup   : ${d.pu} pelanggan
+Total Delivery : ${d.de} pelanggan
+Total Aktivitas: ${d.total}
+
+RINCIAN PER TANGGAL
+${detailPerTanggal}
+
+Detail lengkap (nama pelanggan):
+${d.url}`;
+}
 function shareUrl(t){const base=location.origin+location.pathname.replace(/\/[^/]*$/,'/');return`${base.endsWith('/')?base:base+'/'}?r=${t}`}
 $('cbtn').onclick=async()=>{if(!S.recap)return;const ok=await copyText(recapText(S.recap));toast(ok?'Teks disalin':'Gagal menyalin',ok?'success':'error')};
 async function copyText(t){try{if(navigator.clipboard&&isSecureContext){await navigator.clipboard.writeText(t);return true}}catch(e){}
